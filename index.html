@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Report Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        .error-log {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e5e7eb;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #3b82f6;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .notification-dot {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
+            background-color: #ef4444;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-gray-50 p-4 md:p-6">
+    <script>
+        // Function to format date in Brasilia timezone
+        function getBrasiliaDate() {
+            const options = {
+                timeZone: 'America/Sao_Paulo',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            return new Date().toLocaleString('pt-BR', options);
+        }
+
+        // Function to get current date in dd/mm/yyyy format
+        function getCurrentDate() {
+            const now = new Date();
+            const offset = now.getTimezoneOffset();
+            now.setMinutes(now.getMinutes() - offset); // Adjust for timezone
+            return now.toLocaleDateString('pt-BR');
+        }
+    </script>
+    <div class="max-w-4xl mx-auto space-y-6">
+        <div class="bg-blue-800 text-white p-4 rounded-xl shadow-sm">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-xl font-semibold">RELATÓRIO MENSAL</h1>
+                    <p class="text-blue-200 text-sm mt-1">Relatório de desempenho mensal</p>
+                </div>
+                <div class="relative">
+                    <i class="fas fa-bell text-xl"></i>
+                    <div class="notification-dot"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-5 rounded-xl shadow-sm">
+                <h2 class="text-lg font-semibold mb-2">SKUs Criados Este Mês</h2>
+
+                <div class="bg-gray-50 p-3 rounded-lg mb-3 overflow-y-auto" style="max-height: 100px;">
+                    <div class="text-sm space-y-1">
+                        <div class="flex justify-between">
+                            <span>Total de SKUs Criados: 0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Último SKU: -</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mb-3">
+                    <input type="text" id="newSkuInput" placeholder="Digite um novo SKU e pressione Enter..."
+                        class="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="relative">
+                        <button id="supplierDropdownBtn"
+                            class="bg-gray-50 hover:bg-gray-100 text-gray-800 font-medium py-2 px-4 rounded-lg border border-gray-200 inline-flex items-center">
+                            <span>Fornecedores</span>
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div id="supplierDropdown"
+                            class="hidden absolute z-10 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200">
+                            <ul class="py-1 text-sm text-gray-700" id="supplierList">
+                                <li class="px-4 py-2 hover:bg-gray-100">Fornecedor A</li>
+                                <li class="px-4 py-2 hover:bg-gray-100">Fornecedor B</li>
+                                <li class="px-4 py-2 hover:bg-gray-100">Fornecedor C</li>
+                                <li class="px-4 py-2 hover:bg-gray-100">Fornecedor D</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                </div>
+
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-sm">
+                <h2 class="text-lg font-semibold">Logs de Erro</h2>
+                <p class="text-gray-500 text-sm mb-4">Erros Recentes do Sistema</p>
+
+                <div class="bg-gray-50 p-3 rounded-lg error-log overflow-y-auto" style="max-height: 200px;">
+                    <div class="flex justify-between">
+                        <span>[ERROR]
+                            <script>document.write(getBrasiliaDate())</script>: Connection timeout
+                        </span>
+                        <span class="text-gray-700 font-mono">12.3100</span>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <input type="text" id="newLogInput" placeholder="Digite um novo log e pressione Enter..."
+                        class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-sm md:col-span-2">
+                <h2 class="text-lg font-semibold">Tarefas Concluídas</h2>
+
+                <div class="mt-4 text-center mb-6">
+                    <button id="addTaskBtn"
+                        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Adicionar Tarefa
+                    </button>
+                </div>
+
+                <div class="mt-6">
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm font-medium">Progresso</span>
+                        <input type="text" value="R$6,00 / R$2.000"
+                            class="text-sm font-medium bg-gray-50 px-2 py-1 rounded border border-gray-200">
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0.3%"></div>
+                    </div>
+
+                    <div class="flex justify-between mt-4">
+                        <div class="flex items-center">
+                            <input type="text" value="180.00"
+                                class="text-2xl font-bold mr-2 w-24 bg-gray-50 px-2 py-1 rounded border border-gray-200">
+                            <span class="text-gray-500">vs</span>
+                            <input type="text" value="150.00"
+                                class="text-xl font-medium ml-2 text-gray-600 w-24 bg-gray-50 px-2 py-1 rounded border border-gray-200">
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="successCheck"
+                                class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" checked>
+                            <input type="text" value="Concluído com sucesso"
+                                class="ml-2 text-sm font-medium bg-gray-50 px-2 py-1 rounded border border-gray-200">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-sm md:col-span-2">
+                <h2 class="text-lg font-semibold mb-4">Kanban Board</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <h3 class="font-medium text-center mb-3">To Do</h3>
+                        <div class="space-y-3">
+                            <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200" contenteditable="true">
+                                Nova tarefa a fazer
+                            </div>
+                            <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200" contenteditable="true">
+                                Outra tarefa pendente
+                            </div>
+                        </div>
+                        <button class="mt-2 w-full py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">
+                            + Adicionar nota
+                        </button>
+                    </div>
+
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <h3 class="font-medium text-center mb-3">Doing</h3>
+                        <div class="space-y-3">
+                            <div class="bg-blue-50 p-3 rounded-lg border border-blue-200" contenteditable="true">
+                                Tarefa em andamento
+                            </div>
+                        </div>
+                        <button class="mt-2 w-full py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">
+                            + Adicionar nota
+                        </button>
+                    </div>
+
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <h3 class="font-medium text-center mb-3">Done</h3>
+                        <div class="space-y-3">
+                            <div class="bg-green-50 p-3 rounded-lg border border-green-200" contenteditable="true">
+                                Tarefa concluída
+                            </div>
+                        </div>
+                        <button class="mt-2 w-full py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">
+                            + Adicionar nota
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        const pieChart = new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Fornecedor A', 'Fornecedor B', 'Fornecedor C', 'Fornecedor D'],
+                datasets: [{
+                    data: [12, 19, 3, 5],
+                    backgroundColor: [
+                        '#3b82f6',
+                        '#60a5fa',
+                        '#93c5fd',
+                        '#bfdbfe'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbybEzUArvQE1honhrkM_UhNM-ZeH9NwMpVY7DgoIg5CuHI1uklj84FJVkWeZFmOhSOHIA/exec";
+
+        function getBrasiliaDate() {
+            const options = {
+                timeZone: 'America/Sao_Paulo',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            return new Date().toLocaleString('pt-BR', options);
+        }
+
+        function carregarLogs() {
+            fetch(API_URL)
+                .then(res => res.json())
+                .then(dados => {
+                    const container = document.querySelector('.error-log');
+                    container.innerHTML = '';
+                    dados.forEach(l => {
+                        container.insertAdjacentHTML('beforeend', `
+                        <div class="flex justify-between mt-2">
+                            <span>[${l.Tipo}] ${l.Data}: ${l.Mensagem}</span>
+                            <span class="text-gray-700 font-mono">00.0000</span>
+                        </div>
+                    `);
+                    });
+                });
+        }
+
+        function salvarLog(tipo, mensagem) {
+            const dataAtual = getBrasiliaDate();
+            fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    Data: dataAtual,
+                    Tipo: tipo,
+                    Mensagem: mensagem
+                }),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(res => res.text())
+            .then(res => {
+                console.log("Log salvo:", res);
+                carregarLogs();
+            });
+        }
+
+        // Ao carregar a página, carregue os logs
+        document.addEventListener('DOMContentLoaded', carregarLogs);
+
+        // Input de novos logs
+        const observer = new MutationObserver(() => {
+            const newLogInput = document.getElementById('newLogInput');
+            if (newLogInput) {
+                newLogInput.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        const texto = this.value.trim();
+                        if (texto) {
+                            salvarLog("Erro", texto);
+                            this.value = '';
+                        }
+                    }
+                });
+                observer.disconnect(); // para de observar depois que achou
+            }
+        });
+
+        observer.observe(document.body, {childList: true, subtree: true });
+    </script>
+
+</body>
+
+</html>
