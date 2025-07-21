@@ -284,6 +284,7 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbybEzUArvQE1honhrkM_UhNM-ZeH9NwMpVY7DgoIg5CuHI1uklj84FJVkWeZFmOhSOHIA/exec";
 
+        // Obter data/hora no fuso de Brasília
         function getBrasiliaDate() {
             const options = {
                 timeZone: 'America/Sao_Paulo',
@@ -297,23 +298,26 @@
             return new Date().toLocaleString('pt-BR', options);
         }
 
+        // Carregar logs da planilha
         function carregarLogs() {
             fetch(API_URL)
                 .then(res => res.json())
                 .then(dados => {
                     const container = document.querySelector('.error-log');
+                    if (!container) return;
                     container.innerHTML = '';
                     dados.forEach(l => {
                         container.insertAdjacentHTML('beforeend', `
-                        <div class="flex justify-between mt-2">
-                            <span>[${l.Tipo}] ${l.Data}: ${l.Mensagem}</span>
-                            <span class="text-gray-700 font-mono">00.0000</span>
-                        </div>
-                    `);
+                    <div class="flex justify-between mt-2">
+                        <span>[${l.Tipo}] ${l.Data}: ${l.Mensagem}</span>
+                        <span class="text-gray-700 font-mono">00.0000</span>
+                    </div>
+                `);
                     });
                 });
         }
 
+        // Enviar novo log para a planilha
         function salvarLog(tipo, mensagem) {
             const dataAtual = getBrasiliaDate();
             fetch(API_URL, {
@@ -327,18 +331,17 @@
                     "Content-Type": "application/json"
                 }
             })
-            .then(res => res.text())
-            .then(res => {
-                console.log("Log salvo:", res);
-                carregarLogs();
-            });
+                .then(res => res.text())
+                .then(res => {
+                    console.log("Log salvo:", res);
+                    carregarLogs();
+                });
         }
 
-        // Ao carregar a página, carregue os logs
-        document.addEventListener('DOMContentLoaded', carregarLogs);
+        // Espera o DOM estar pronto para registrar eventos
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarLogs();
 
-        // Input de novos logs
-        const observer = new MutationObserver(() => {
             const newLogInput = document.getElementById('newLogInput');
             if (newLogInput) {
                 newLogInput.addEventListener('keypress', function (e) {
@@ -350,12 +353,10 @@
                         }
                     }
                 });
-                observer.disconnect(); // para de observar depois que achou
             }
         });
-
-        observer.observe(document.body, {childList: true, subtree: true });
     </script>
+
 
 </body>
 
