@@ -1,363 +1,378 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monthly Report Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 250px;
-            width: 100%;
-        }
-
-        .error-log {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.85rem;
-            color: #6b7280;
-        }
-
-        .progress-bar {
-            height: 8px;
-            border-radius: 4px;
-            background-color: #e5e7eb;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background-color: #3b82f6;
-            border-radius: 4px;
-            transition: width 0.5s ease;
-        }
-
-        .notification-dot {
-            position: absolute;
-            top: -2px;
-            right: -2px;
-            width: 8px;
-            height: 8px;
-            background-color: #ef4444;
-            border-radius: 50%;
-        }
-    </style>
+    <title>Sistema de Gerenciamento SKU</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-
-<body class="min-h-screen bg-gray-50 p-4 md:p-6">
-    <script>
-        // Function to format date in Brasilia timezone
-        function getBrasiliaDate() {
-            const options = {
-                timeZone: 'America/Sao_Paulo',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            };
-            return new Date().toLocaleString('pt-BR', options);
-        }
-
-        // Function to get current date in dd/mm/yyyy format
-        function getCurrentDate() {
-            const now = new Date();
-            const offset = now.getTimezoneOffset();
-            now.setMinutes(now.getMinutes() - offset); // Adjust for timezone
-            return now.toLocaleDateString('pt-BR');
-        }
-    </script>
-    <div class="max-w-4xl mx-auto space-y-6">
-        <div class="bg-blue-800 text-white p-4 rounded-xl shadow-sm">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h1 class="text-xl font-semibold">RELATÓRIO MENSAL</h1>
-                    <p class="text-blue-200 text-sm mt-1">Relatório de desempenho mensal</p>
-                </div>
-                <div class="relative">
-                    <i class="fas fa-bell text-xl"></i>
-                    <div class="notification-dot"></div>
-                </div>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-cubes"></i> SKU Manager</h2>
             </div>
-        </div>
+            <ul class="sidebar-menu">
+                <li><a href="#" data-page="dashboard" class="menu-item active">
+                    <i class="fas fa-home"></i> Dashboard
+                </a></li>
+                <li><a href="#" data-page="skus" class="menu-item">
+                    <i class="fas fa-box"></i> SKUs
+                </a></li>
+                <li><a href="#" data-page="errors" class="menu-item">
+                    <i class="fas fa-exclamation-triangle"></i> Erros
+                </a></li>
+                <li><a href="#" data-page="kanban" class="menu-item">
+                    <i class="fas fa-columns"></i> Kanban
+                </a></li>
+                <li><a href="#" data-page="calculator" class="menu-item">
+                    <i class="fas fa-calculator"></i> Calculadora
+                </a></li>
+            </ul>
+        </nav>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-white p-5 rounded-xl shadow-sm">
-                <h2 class="text-lg font-semibold mb-2">SKUs Criados Este Mês</h2>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Page -->
+            <div id="dashboard" class="page active">
+                <div class="page-header">
+                    <h1>Dashboard</h1>
+                    <p>Visão geral do sistema de gerenciamento SKU</p>
+                </div>
 
-                <div class="bg-gray-50 p-3 rounded-lg mb-3 overflow-y-auto" style="max-height: 100px;">
-                    <div class="text-sm space-y-1">
-                        <div class="flex justify-between">
-                            <span>Total de SKUs Criados: 0</span>
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span>SKUs Criados</span>
+                            <i class="fas fa-chart-bar"></i>
                         </div>
-                        <div class="flex justify-between">
-                            <span>Último SKU: -</span>
+                        <div class="stat-value" id="total-skus">0</div>
+                        <div class="stat-label">Este mês</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span>Erros Registrados</span>
+                            <i class="fas fa-exclamation-triangle"></i>
                         </div>
+                        <div class="stat-value" id="total-errors">0</div>
+                        <div class="stat-label">Últimos 7 dias</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span>Tarefas Abertas</span>
+                            <i class="fas fa-columns"></i>
+                        </div>
+                        <div class="stat-value" id="total-tasks">0</div>
+                        <div class="stat-label">No Kanban</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span>Produtividade</span>
+                            <i class="fas fa-trending-up"></i>
+                        </div>
+                        <div class="stat-value">100%</div>
+                        <div class="stat-label">+0% desde ontem</div>
                     </div>
                 </div>
 
-                <div class="flex gap-3 mb-3">
-                    <input type="text" id="newSkuInput" placeholder="Digite um novo SKU e pressione Enter..."
-                        class="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <div class="relative">
-                        <button id="supplierDropdownBtn"
-                            class="bg-gray-50 hover:bg-gray-100 text-gray-800 font-medium py-2 px-4 rounded-lg border border-gray-200 inline-flex items-center">
-                            <span>Fornecedores</span>
-                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7"></path>
-                            </svg>
+                <!-- Quick Actions -->
+                <div class="actions-grid">
+                    <div class="action-card" data-action="skus">
+                        <h3><i class="fas fa-box"></i> Gerenciar SKUs</h3>
+                        <p>Registre e acompanhe a criação de novos SKUs</p>
+                        <button class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Criar SKU
                         </button>
-                        <div id="supplierDropdown"
-                            class="hidden absolute z-10 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200">
-                            <ul class="py-1 text-sm text-gray-700" id="supplierList">
-                                <li class="px-4 py-2 hover:bg-gray-100">Fornecedor A</li>
-                                <li class="px-4 py-2 hover:bg-gray-100">Fornecedor B</li>
-                                <li class="px-4 py-2 hover:bg-gray-100">Fornecedor C</li>
-                                <li class="px-4 py-2 hover:bg-gray-100">Fornecedor D</li>
-                            </ul>
+                    </div>
+                    <div class="action-card" data-action="errors">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Log de Erros</h3>
+                        <p>Registre e resolva erros do sistema</p>
+                        <button class="btn btn-outline">Ver Erros</button>
+                    </div>
+                    <div class="action-card" data-action="kanban">
+                        <h3><i class="fas fa-columns"></i> Kanban</h3>
+                        <p>Organize suas tarefas visualmente</p>
+                        <button class="btn btn-outline">Abrir Kanban</button>
+                    </div>
+                    <div class="action-card" data-action="calculator">
+                        <h3><i class="fas fa-calculator"></i> Calculadora</h3>
+                        <p>Calcule porcentagens rapidamente</p>
+                        <button class="btn btn-outline">Usar Calculadora</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SKUs Page -->
+            <div id="skus" class="page">
+                <div class="page-header">
+                    <h1>Gerenciamento de SKUs</h1>
+                    <p>Registre e acompanhe a criação de SKUs por mês</p>
+                </div>
+
+                <div class="content-grid">
+                    <!-- Form -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-plus"></i> Criar Novo SKU</h3>
+                            <p>Adicione um novo SKU ao sistema</p>
+                        </div>
+                        <div class="card-content">
+                            <form id="sku-form">
+                                <div class="form-group">
+                                    <label for="sku-name">Nome do SKU</label>
+                                    <input type="text" id="sku-name" placeholder="Ex: Camiseta Azul M" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sku-code">Código do SKU</label>
+                                    <input type="text" id="sku-code" placeholder="Ex: CAM-AZL-M-001" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary full-width">
+                                    <i class="fas fa-plus"></i> Criar SKU
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-bar"></i> Estatísticas Mensais</h3>
+                            <p>SKUs criados por mês</p>
+                        </div>
+                        <div class="card-content">
+                            <div id="monthly-stats">
+                                <p class="empty-state">Nenhum SKU criado ainda</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="chart-container">
-                    <canvas id="pieChart"></canvas>
-                </div>
-
-            </div>
-
-            <div class="bg-white p-5 rounded-xl shadow-sm">
-                <h2 class="text-lg font-semibold">Logs de Erro</h2>
-                <p class="text-gray-500 text-sm mb-4">Erros Recentes do Sistema</p>
-
-                <div class="bg-gray-50 p-3 rounded-lg error-log overflow-y-auto" style="max-height: 200px;">
-                    <div class="flex justify-between">
-                        <span>[ERROR]
-                            <script>document.write(getBrasiliaDate())</script>: Connection timeout
-                        </span>
-                        <span class="text-gray-700 font-mono">12.3100</span>
+                <!-- Recent SKUs -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>SKUs Recentes</h3>
+                        <p>Últimos SKUs criados no sistema</p>
+                    </div>
+                    <div class="card-content">
+                        <div id="recent-skus">
+                            <p class="empty-state">Nenhum SKU encontrado. Crie seu primeiro SKU!</p>
+                        </div>
                     </div>
                 </div>
-                <div class="mt-3">
-                    <input type="text" id="newLogInput" placeholder="Digite um novo log e pressione Enter..."
-                        class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- Errors Page -->
+            <div id="errors" class="page">
+                <div class="page-header">
+                    <h1>Log de Erros</h1>
+                    <p>Registre e acompanhe erros do sistema com horário de Brasília</p>
+                </div>
+
+                <div class="content-grid">
+                    <!-- Form -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-plus"></i> Registrar Erro</h3>
+                            <p>Adicione um novo erro ao log</p>
+                        </div>
+                        <div class="card-content">
+                            <form id="error-form">
+                                <div class="form-group">
+                                    <label for="error-title">Título do Erro</label>
+                                    <input type="text" id="error-title" placeholder="Ex: Erro na validação de dados" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="error-description">Descrição</label>
+                                    <textarea id="error-description" placeholder="Descreva o erro detalhadamente..." required></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="error-severity">Severidade</label>
+                                    <select id="error-severity" required>
+                                        <option value="">Selecione a severidade</option>
+                                        <option value="low">Baixa</option>
+                                        <option value="medium">Média</option>
+                                        <option value="high">Alta</option>
+                                        <option value="critical">Crítica</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary full-width">
+                                    <i class="fas fa-plus"></i> Registrar Erro
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-pie"></i> Estatísticas</h3>
+                            <p>Distribuição de erros por severidade</p>
+                        </div>
+                        <div class="card-content">
+                            <div id="error-stats">
+                                <p class="empty-state">Nenhum erro registrado ainda</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Errors -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Erros Recentes</h3>
+                        <p>Últimos erros registrados no sistema</p>
+                    </div>
+                    <div class="card-content">
+                        <div id="recent-errors">
+                            <p class="empty-state">Nenhum erro encontrado. Registre o primeiro erro!</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-white p-5 rounded-xl shadow-sm md:col-span-2">
-                <h2 class="text-lg font-semibold">Tarefas Concluídas</h2>
-
-                <div class="mt-4 text-center mb-6">
-                    <button id="addTaskBtn"
-                        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
-                        <i class="fas fa-plus mr-2"></i>Adicionar Tarefa
+            <!-- Kanban Page -->
+            <div id="kanban" class="page">
+                <div class="page-header">
+                    <h1>Kanban Board</h1>
+                    <p>Organize suas tarefas visualmente</p>
+                    <button id="add-task-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Adicionar Tarefa
                     </button>
                 </div>
 
-                <div class="mt-6">
-                    <div class="flex justify-between mb-1">
-                        <span class="text-sm font-medium">Progresso</span>
-                        <input type="text" value="R$6,00 / R$2.000"
-                            class="text-sm font-medium bg-gray-50 px-2 py-1 rounded border border-gray-200">
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 0.3%"></div>
-                    </div>
-
-                    <div class="flex justify-between mt-4">
-                        <div class="flex items-center">
-                            <input type="text" value="180.00"
-                                class="text-2xl font-bold mr-2 w-24 bg-gray-50 px-2 py-1 rounded border border-gray-200">
-                            <span class="text-gray-500">vs</span>
-                            <input type="text" value="150.00"
-                                class="text-xl font-medium ml-2 text-gray-600 w-24 bg-gray-50 px-2 py-1 rounded border border-gray-200">
+                <div class="kanban-board">
+                    <div class="kanban-column" data-status="todo">
+                        <div class="column-header">
+                            <h3><i class="fas fa-clock"></i> A Fazer</h3>
+                            <span class="task-count" id="todo-count">0</span>
                         </div>
-                        <div class="flex items-center">
-                            <input type="checkbox" id="successCheck"
-                                class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" checked>
-                            <input type="text" value="Concluído com sucesso"
-                                class="ml-2 text-sm font-medium bg-gray-50 px-2 py-1 rounded border border-gray-200">
+                        <div class="column-content" id="todo-tasks"></div>
+                    </div>
+                    <div class="kanban-column" data-status="in-progress">
+                        <div class="column-header">
+                            <h3><i class="fas fa-play"></i> Em Progresso</h3>
+                            <span class="task-count" id="in-progress-count">0</span>
                         </div>
+                        <div class="column-content" id="in-progress-tasks"></div>
+                    </div>
+                    <div class="kanban-column" data-status="done">
+                        <div class="column-header">
+                            <h3><i class="fas fa-check"></i> Concluído</h3>
+                            <span class="task-count" id="done-count">0</span>
+                        </div>
+                        <div class="column-content" id="done-tasks"></div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white p-5 rounded-xl shadow-sm md:col-span-2">
-                <h2 class="text-lg font-semibold mb-4">Kanban Board</h2>
+            <!-- Calculator Page -->
+            <div id="calculator" class="page">
+                <div class="page-header">
+                    <h1>Calculadora de Porcentagem</h1>
+                    <p>Calcule porcentagens de forma rápida e simples</p>
+                </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <h3 class="font-medium text-center mb-3">To Do</h3>
-                        <div class="space-y-3">
-                            <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200" contenteditable="true">
-                                Nova tarefa a fazer
-                            </div>
-                            <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200" contenteditable="true">
-                                Outra tarefa pendente
-                            </div>
+                <div class="content-grid">
+                    <!-- Calculator -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-calculator"></i> Calculadora</h3>
+                            <p>Digite a porcentagem e o valor para calcular</p>
                         </div>
-                        <button class="mt-2 w-full py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">
-                            + Adicionar nota
-                        </button>
+                        <div class="card-content">
+                            <form id="calculator-form">
+                                <div class="form-group">
+                                    <label for="percentage">Porcentagem (%)</label>
+                                    <input type="number" id="percentage" step="0.01" placeholder="Ex: 3" required>
+                                </div>
+                                <div class="form-separator">de</div>
+                                <div class="form-group">
+                                    <label for="value">Valor</label>
+                                    <input type="number" id="value" step="0.01" placeholder="Ex: 569" required>
+                                </div>
+                                <div class="form-buttons">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-percent"></i> Calcular
+                                    </button>
+                                    <button type="button" class="btn btn-outline" onclick="clearCalculation()">
+                                        Limpar
+                                    </button>
+                                </div>
+                            </form>
+                            <div id="calculator-result" style="display: none;"></div>
+                        </div>
                     </div>
 
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <h3 class="font-medium text-center mb-3">Doing</h3>
-                        <div class="space-y-3">
-                            <div class="bg-blue-50 p-3 rounded-lg border border-blue-200" contenteditable="true">
-                                Tarefa em andamento
+                    <!-- Examples -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Exemplos</h3>
+                            <p>Alguns exemplos de cálculos de porcentagem</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="examples-grid">
+                                <div class="example-item" onclick="useExample(3, 569, 17.07)">
+                                    <div><strong>3%</strong> de <strong>569</strong> = <span class="result">17.07</span></div>
+                                    <button class="btn btn-ghost btn-sm">Usar este exemplo</button>
+                                </div>
+                                <div class="example-item" onclick="useExample(15, 1000, 150)">
+                                    <div><strong>15%</strong> de <strong>1000</strong> = <span class="result">150</span></div>
+                                    <button class="btn btn-ghost btn-sm">Usar este exemplo</button>
+                                </div>
+                                <div class="example-item" onclick="useExample(25, 800, 200)">
+                                    <div><strong>25%</strong> de <strong>800</strong> = <span class="result">200</span></div>
+                                    <button class="btn btn-ghost btn-sm">Usar este exemplo</button>
+                                </div>
+                                <div class="example-item" onclick="useExample(10, 250, 25)">
+                                    <div><strong>10%</strong> de <strong>250</strong> = <span class="result">25</span></div>
+                                    <button class="btn btn-ghost btn-sm">Usar este exemplo</button>
+                                </div>
                             </div>
                         </div>
-                        <button class="mt-2 w-full py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">
-                            + Adicionar nota
-                        </button>
-                    </div>
-
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <h3 class="font-medium text-center mb-3">Done</h3>
-                        <div class="space-y-3">
-                            <div class="bg-green-50 p-3 rounded-lg border border-green-200" contenteditable="true">
-                                Tarefa concluída
-                            </div>
-                        </div>
-                        <button class="mt-2 w-full py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">
-                            + Adicionar nota
-                        </button>
                     </div>
                 </div>
             </div>
+        </main>
+    </div>
 
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Task Modal -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Adicionar Nova Tarefa</h3>
+                <button class="close-btn" onclick="closeTaskModal()">&times;</button>
+            </div>
+            <form id="task-form">
+                <div class="form-group">
+                    <label for="task-title">Título da Tarefa</label>
+                    <input type="text" id="task-title" placeholder="Ex: Implementar nova funcionalidade" required>
+                </div>
+                <div class="form-group">
+                    <label for="task-description">Descrição</label>
+                    <textarea id="task-description" placeholder="Descreva a tarefa..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="task-priority">Prioridade</label>
+                    <select id="task-priority" required>
+                        <option value="low">Baixa</option>
+                        <option value="medium" selected>Média</option>
+                        <option value="high">Alta</option>
+                    </select>
+                </div>
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-primary">Criar Tarefa</button>
+                    <button type="button" class="btn btn-outline" onclick="closeTaskModal()">Cancelar</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <script>
-        const pieCtx = document.getElementById('pieChart').getContext('2d');
-        const pieChart = new Chart(pieCtx, {
-            type: 'pie',
-            data: {
-                labels: ['Fornecedor A', 'Fornecedor B', 'Fornecedor C', 'Fornecedor D'],
-                datasets: [{
-                    data: [12, 19, 3, 5],
-                    backgroundColor: [
-                        '#3b82f6',
-                        '#60a5fa',
-                        '#93c5fd',
-                        '#bfdbfe'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = Math.round((value / total) * 100);
-                                return `${label}: ${value} (${percentage}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    </script>
-    <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbxxBhMDIPB3v32UZjd4wBfk_dWbbfrzEJIAAHWqOH8aRBfVDX39U6OI9oMwFFao7vArZA/exec";
-
-        // Obter data/hora no fuso de Brasília
-        function getBrasiliaDate() {
-            const options = {
-                timeZone: 'America/Sao_Paulo',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            };
-            return new Date().toLocaleString('pt-BR', options);
-        }
-
-        // Carregar logs da planilha
-        function carregarLogs() {
-            fetch(API_URL)
-                .then(res => res.json())
-                .then(dados => {
-                    const container = document.querySelector('.error-log');
-                    if (!container) return;
-                    container.innerHTML = '';
-                    dados.forEach(l => {
-                        container.insertAdjacentHTML('beforeend', `
-                    <div class="flex justify-between mt-2">
-                        <span>[${l.Tipo}] ${l.Data}: ${l.Mensagem}</span>
-                        <span class="text-gray-700 font-mono">00.0000</span>
-                    </div>
-                `);
-                    });
-                });
-        }
-
-        // Enviar novo log para a planilha
-        function salvarLog(tipo, mensagem) {
-            const dataAtual = getBrasiliaDate();
-            fetch(API_URL, {
-                method: "POST",
-                body: JSON.stringify({
-                    Data: dataAtual,
-                    Tipo: tipo,
-                    Mensagem: mensagem
-                }),
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            })
-                .then(res => res.text())
-                .then(res => {
-                    console.log("Log salvo:", res);
-                    carregarLogs();
-                });
-        }
-
-        // Espera o DOM estar pronto para registrar eventos
-        document.addEventListener('DOMContentLoaded', () => {
-            carregarLogs();
-
-            const newLogInput = document.getElementById('newLogInput');
-            if (newLogInput) {
-                newLogInput.addEventListener('keypress', function (e) {
-                    if (e.key === 'Enter') {
-                        const texto = this.value.trim();
-                        if (texto) {
-                            salvarLog("Erro", texto);
-                            this.value = '';
-                        }
-                    }
-                });
-            }
-        });
-    </script>
-
-
+    <script src="script.js"></script>
 </body>
-
 </html>
