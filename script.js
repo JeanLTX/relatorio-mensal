@@ -1,20 +1,70 @@
-// Global state
-let skus = JSON.parse(localStorage.getItem('skus') || '[]');
-let errors = JSON.parse(localStorage.getItem('errors') || '[]');
-let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+// ====================================================================
+// NOVAS VARIÁVEIS PARA O SUPABASE
+// SUBSTITUA PELAS SUAS CHAVES DO SUPABASE!
+const SUPABASE_URL = 'https://sfahifkwumpgdtbwjmcm.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmYWhpZmt3dW1wZ2R0YndqbWNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4MTE4OTAsImV4cCI6MjA2OTM4Nzg5MH0.ukrnyr3_3aaqpZqUFSLyqL7axLAsezSmRKags1peveU';
+
+const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// ====================================================================
+
+// Global arrays (agora serão preenchidas do Supabase para SKUs e Erros)
+let skus = [];
+let errors = [];
+let tasks = JSON.parse(localStorage.getItem('tasks') || '[]'); // Tasks ainda usam localStorage
 let draggedTask = null;
 
 // Initialize app
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() { // Adicione 'async' aqui
     initializeNavigation();
-    initializeForms();
+    initializeForms(); // Renomeado para initializeForms
     initializeActionCards();
     initializeKanban();
-    updateDashboardStats();
-    renderSKUs();
-    renderErrors();
-    renderTasks();
+    
+    await fetchAndRenderData(); // Nova função para buscar dados do Supabase
 });
+
+// ====================================================================
+// NOVA FUNÇÃO PARA BUSCAR E RENDERIZAR DADOS DO SUPABASE
+async function fetchAndRenderData() {
+    await fetchSKUs();
+    await fetchErrors();
+    updateDashboardStats(); // Atualiza dashboard com dados do Supabase
+    renderSKUs(); // Renderiza SKUs
+    renderErrors(); // Renderiza Erros
+    renderTasks(); // Kanban ainda usa localStorage, então pode manter
+}
+
+// Funções para buscar dados do Supabase
+async function fetchSKUs() {
+    const { data, error } = await supabase
+        .from('skus')
+        .select('*')
+        .order('created_at', { ascending: false }); // Ordena do mais novo para o mais antigo
+
+    if (error) {
+        console.error('Erro ao buscar SKUs:', error.message);
+        showToast('Erro ao carregar SKUs.', 'error');
+        skus = []; // Garante que a lista esteja vazia em caso de erro
+    } else {
+        skus = data;
+    }
+}
+
+async function fetchErrors() {
+    const { data, error } = await supabase
+        .from('errors')
+        .select('*')
+        .order('created_at', { ascending: false }); // Ordena do mais novo para o mais antigo
+
+    if (error) {
+        console.error('Erro ao buscar Erros:', error.message);
+        showToast('Erro ao carregar Erros.', 'error');
+        errors = []; // Garante que a lista esteja vazia em caso de erro
+    } else {
+        errors = data;
+    }
+}
+// ====================================================================
 
 // Navigation
 function initializeNavigation() {
@@ -58,10 +108,11 @@ function initializeActionCards() {
     });
 }
 
-// Forms
-function initializeForm() {
+// ====================================================================
+// ATUALIZAÇÃO DA FUNÇÃO initializeForms
+function initializeForms() { // Renomeado de initializeForm para initializeForms
     // SKU Form
-    document.getElementById('sku-form').addEventListener('submit', function(e) {
+    document.getElementById('sku-form').addEventListener('submit', async function(e) { // Adicione 'async' aqui
         e.preventDefault();
         const name = document.getElementById('sku-name').value.trim();
         const code = document.getElementById('sku-code').value.trim();
@@ -72,25 +123,33 @@ function initializeForm() {
         }
         
         const newSKU = {
-            id: Date.now().toString(),
             name,
             code,
-            createdAt: new Date().toISOString()
+            // id e created_at são gerados automaticamente pelo Supabase
         };
         
-        skus.unshift(newSKU);
-        localStorage.setItem('skus', JSON.stringify(skus));
+        // ====================================================================
+        // ENVIAR PARA O SUPABASE
+        const { data, error } = await supabase
+            .from('skus')
+            .insert([newSKU]);
+
+        if (error) {
+            console.error('Erro ao criar SKU no Supabase:', error.message);
+            showToast(`Erro ao criar SKU: ${error.message}`, 'error');
+            return;
+        }
+        // ====================================================================
         
         // Reset form
         this.reset();
         
         showToast(`SKU "${name}" criado com sucesso!`, 'success');
-        renderSKUs();
-        updateDashboardStats();
+        await fetchAndRenderData(); // Refetch e re-renderiza todos os dados para atualizar
     });
     
     // Error Form
-    document.getElementById('error-form').addEventListener('submit', function(e) {
+    document.getElementById('error-form').addEventListener('submit', async function(e) { // Adicione 'async' aqui
         e.preventDefault();
         const title = document.getElementById('error-title').value.trim();
         const description = document.getElementById('error-description').value.trim();
@@ -102,26 +161,34 @@ function initializeForm() {
         }
         
         const newError = {
-            id: Date.now().toString(),
             title,
             description,
             severity,
-            createdAt: new Date().toISOString(),
-            resolved: false
+            resolved: false // Valor padrão
+            // id e created_at são gerados automaticamente pelo Supabase
         };
         
-        errors.unshift(newError);
-        localStorage.setItem('errors', JSON.stringify(errors));
+        // ====================================================================
+        // ENVIAR PARA O SUPABASE
+        const { data, error } = await supabase
+            .from('errors')
+            .insert([newError]);
+
+        if (error) {
+            console.error('Erro ao registrar erro no Supabase:', error.message);
+            showToast(`Erro ao registrar erro: ${error.message}`, 'error');
+            return;
+        }
+        // ====================================================================
         
         // Reset form
         this.reset();
         
         showToast(`Erro "${title}" registrado com sucesso!`, 'success');
-        renderErrors();
-        updateDashboardStats();
+        await fetchAndRenderData(); // Refetch e re-renderiza todos os dados para atualizar
     });
     
-    // Task Form
+    // Task Form (mantém o mesmo código, pois ainda usa localStorage)
     document.getElementById('task-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const title = document.getElementById('task-title').value.trim();
@@ -154,7 +221,7 @@ function initializeForm() {
         updateDashboardStats();
     });
     
-    // Calculator Form
+    // Calculator Form (mantém o mesmo código)
     document.getElementById('calculator-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const percentage = parseFloat(document.getElementById('percentage').value);
@@ -169,14 +236,16 @@ function initializeForm() {
         showCalculatorResult(percentage, value, result);
     });
 }
+// ====================================================================
 
-// Dashboard stats
+
+// Dashboard stats (atualizado para usar 'skus' e 'errors' que virão do Supabase)
 function updateDashboardStats() {
     // Count SKUs this month
     const thisMonth = new Date().getMonth();
     const thisYear = new Date().getFullYear();
     const thisMonthSKUs = skus.filter(sku => {
-        const skuDate = new Date(sku.createdAt);
+        const skuDate = new Date(sku.created_at); // Alterado de 'createdAt' para 'created_at'
         return skuDate.getMonth() === thisMonth && skuDate.getFullYear() === thisYear;
     }).length;
     
@@ -184,10 +253,10 @@ function updateDashboardStats() {
     const lastWeek = new Date();
     lastWeek.setDate(lastWeek.getDate() - 7);
     const recentErrors = errors.filter(error => {
-        return new Date(error.createdAt) >= lastWeek;
+        return new Date(error.created_at) >= lastWeek; // Alterado de 'createdAt' para 'created_at'
     }).length;
     
-    // Count open tasks
+    // Count open tasks (ainda usa localStorage)
     const openTasks = tasks.filter(task => task.status !== 'done').length;
     
     document.getElementById('total-skus').textContent = thisMonthSKUs;
@@ -195,7 +264,7 @@ function updateDashboardStats() {
     document.getElementById('total-tasks').textContent = openTasks;
 }
 
-// SKU management
+// SKU management (atualizado para renderizar dados de 'skus' que virão do Supabase)
 function renderSKUs() {
     const monthlyStats = getMonthlyStats(skus);
     const monthlyStatsContainer = document.getElementById('monthly-stats');
@@ -216,7 +285,7 @@ function renderSKUs() {
     // Render recent SKUs
     if (skus.length > 0) {
         recentSKUsContainer.innerHTML = skus.slice(0, 10).map(sku => {
-            const date = new Date(sku.createdAt);
+            const date = new Date(sku.created_at); // Alterado de 'createdAt' para 'created_at'
             return `
                 <div class="sku-item">
                     <div class="sku-info">
@@ -235,7 +304,7 @@ function renderSKUs() {
     }
 }
 
-// Error management
+// Error management (atualizado para renderizar dados de 'errors' que virão do Supabase)
 function renderErrors() {
     const errorStats = getErrorStats();
     const errorStatsContainer = document.getElementById('error-stats');
@@ -256,7 +325,7 @@ function renderErrors() {
     // Render recent errors
     if (errors.length > 0) {
         recentErrorsContainer.innerHTML = errors.slice(0, 10).map(error => {
-            const date = new Date(error.createdAt);
+            const date = new Date(error.created_at); // Alterado de 'createdAt' para 'created_at'
             return `
                 <div class="error-item">
                     <div class="error-info">
@@ -276,7 +345,7 @@ function renderErrors() {
     }
 }
 
-// Kanban management
+// Kanban management (mantém o mesmo código, ainda usa localStorage)
 function initializeKanban() {
     const addTaskBtn = document.getElementById('add-task-btn');
     addTaskBtn.addEventListener('click', openTaskModal);
@@ -332,7 +401,7 @@ function renderTaskColumn(containerId, taskList) {
     }
 }
 
-// Drag and drop handlers
+// Drag and drop handlers (mantém o mesmo código, ainda usa localStorage)
 function handleDragStart(e) {
     draggedTask = e.target;
     e.target.classList.add('dragging');
@@ -365,7 +434,7 @@ function handleDrop(e) {
     }
 }
 
-// Modal management
+// Modal management (mantém o mesmo código)
 function openTaskModal() {
     document.getElementById('task-modal').classList.add('active');
 }
@@ -399,12 +468,12 @@ function clearCalculation() {
     document.getElementById('calculator-result').style.display = 'none';
 }
 
-// Utility functions
+// Utility functions (atualizado para usar 'created_at' do Supabase)
 function getMonthlyStats(items) {
     const monthlyCount = {};
     
     items.forEach(item => {
-        const date = new Date(item.createdAt);
+        const date = new Date(item.created_at); // Alterado de 'createdAt' para 'created_at'
         const monthKey = date.toLocaleDateString('pt-BR', { 
             year: 'numeric', 
             month: 'long' 
@@ -454,9 +523,6 @@ function showToast(message, type = 'success') {
         toast.classList.remove('show');
     }, 3000);
 }
-
-// Initialize forms when DOM is loaded
-document.addEventListener('DOMContentLoaded', initializeForm);
 
 // Close modal when clicking outside
 document.addEventListener('click', function(e) {
