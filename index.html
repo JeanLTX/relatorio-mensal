@@ -377,3 +377,381 @@
     <script src="script.js"></script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gerenciamento SKU</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-cubes"></i> SKU Manager</h2>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="#" data-page="dashboard" class="menu-item active">
+                    <i class="fas fa-home"></i> Dashboard
+                </a></li>
+                <li><a href="#" data-page="skus" class="menu-item">
+                    <i class="fas fa-box"></i> SKUs
+                </a></li>
+                <li><a href="#" data-page="errors" class="menu-item">
+                    <i class="fas fa-exclamation-triangle"></i> Erros
+                </a></li>
+                <li><a href="#" data-page="kanban" class="menu-item">
+                    <i class="fas fa-columns"></i> Kanban
+                </a></li>
+                <li><a href="#" data-page="calculator" class="menu-item">
+                    <i class="fas fa-calculator"></i> Calculadora
+                </a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Page -->
+            <div id="dashboard" class="page active">
+                <div class="page-header">
+                    <h1>Dashboard</h1>
+                    <p>Visão geral do sistema de gerenciamento SKU</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span>SKUs Criados</span>
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="stat-value" id="total-skus">0</div>
+                        <div class="stat-label">Este mês</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span>Erros Registrados</span>
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-value" id="total-errors">0</div>
+                        <div class="stat-label">Últimos 7 dias</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span>Tarefas Abertas</span>
+                            <i class="fas fa-columns"></i>
+                        </div>
+                        <div class="stat-value" id="total-tasks">0</div>
+                        <div class="stat-label">No Kanban</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span>Produtividade</span>
+                            <i class="fas fa-trending-up"></i>
+                        </div>
+                        <div class="stat-value">100%</div>
+                        <div class="stat-label">+0% desde ontem</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="actions-grid">
+                    <div class="action-card" data-action="skus">
+                        <h3><i class="fas fa-box"></i> Gerenciar SKUs</h3>
+                        <p>Registre e acompanhe a criação de novos SKUs</p>
+                        <button class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Criar SKU
+                        </button>
+                    </div>
+                    <div class="action-card" data-action="errors">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Log de Erros</h3>
+                        <p>Registre e resolva erros do sistema</p>
+                        <button class="btn btn-outline">Ver Erros</button>
+                    </div>
+                    <div class="action-card" data-action="kanban">
+                        <h3><i class="fas fa-columns"></i> Kanban</h3>
+                        <p>Organize suas tarefas visualmente</p>
+                        <button class="btn btn-outline">Abrir Kanban</button>
+                    </div>
+                    <div class="action-card" data-action="calculator">
+                        <h3><i class="fas fa-calculator"></i> Calculadora</h3>
+                        <p>Calcule porcentagens rapidamente</p>
+                        <button class="btn btn-outline">Usar Calculadora</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SKUs Page -->
+            <div id="skus" class="page">
+                <div class="page-header">
+                    <h1>Gerenciamento de SKUs</h1>
+                    <p>Registre e acompanhe a criação de SKUs por mês</p>
+                </div>
+
+                <div class="content-grid">
+                    <!-- Form -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-plus"></i> Criar Novo SKU</h3>
+                            <p>Adicione um novo SKU ao sistema</p>
+                        </div>
+                        <div class="card-content">
+                            <form id="sku-form">
+                                <div class="form-group">
+                                    <label for="sku-name">Nome do SKU</label>
+                                    <input type="text" id="sku-name" placeholder="Ex: Camiseta Azul M" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sku-code">Código do SKU</label>
+                                    <input type="text" id="sku-code" placeholder="Ex: CAM-AZL-M-001" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary full-width">
+                                    <i class="fas fa-plus"></i> Criar SKU
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-bar"></i> Estatísticas Mensais</h3>
+                            <p>SKUs criados por mês</p>
+                        </div>
+                        <div class="card-content">
+                            <div id="monthly-stats">
+                                <p class="empty-state">Nenhum SKU criado ainda</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent SKUs -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>SKUs Recentes</h3>
+                        <p>Últimos SKUs criados no sistema</p>
+                    </div>
+                    <div class="card-content">
+                        <div id="recent-skus">
+                            <p class="empty-state">Nenhum SKU encontrado. Crie seu primeiro SKU!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Errors Page -->
+            <div id="errors" class="page">
+                <div class="page-header">
+                    <h1>Log de Erros</h1>
+                    <p>Registre e acompanhe erros do sistema com horário de Brasília</p>
+                </div>
+
+                <div class="content-grid">
+                    <!-- Form -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-plus"></i> Registrar Erro</h3>
+                            <p>Adicione um novo erro ao log</p>
+                        </div>
+                        <div class="card-content">
+                            <form id="error-form">
+                                <div class="form-group">
+                                    <label for="error-title">Título do Erro</label>
+                                    <input type="text" id="error-title" placeholder="Ex: Erro na validação de dados" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="error-description">Descrição</label>
+                                    <textarea id="error-description" placeholder="Descreva o erro detalhadamente..." required></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="error-severity">Severidade</label>
+                                    <select id="error-severity" required>
+                                        <option value="">Selecione a severidade</option>
+                                        <option value="low">Baixa</option>
+                                        <option value="medium">Média</option>
+                                        <option value="high">Alta</option>
+                                        <option value="critical">Crítica</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary full-width">
+                                    <i class="fas fa-plus"></i> Registrar Erro
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-pie"></i> Estatísticas</h3>
+                            <p>Distribuição de erros por severidade</p>
+                        </div>
+                        <div class="card-content">
+                            <div id="error-stats">
+                                <p class="empty-state">Nenhum erro registrado ainda</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Errors -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Erros Recentes</h3>
+                        <p>Últimos erros registrados no sistema</p>
+                    </div>
+                    <div class="card-content">
+                        <div id="recent-errors">
+                            <p class="empty-state">Nenhum erro encontrado. Registre o primeiro erro!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kanban Page -->
+            <div id="kanban" class="page">
+                <div class="page-header">
+                    <h1>Kanban Board</h1>
+                    <p>Organize suas tarefas visualmente</p>
+                    <button id="add-task-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Adicionar Tarefa
+                    </button>
+                </div>
+
+                <div class="kanban-board">
+                    <div class="kanban-column" data-status="todo">
+                        <div class="column-header">
+                            <h3><i class="fas fa-clock"></i> A Fazer</h3>
+                            <span class="task-count" id="todo-count">0</span>
+                        </div>
+                        <div class="column-content" id="todo-tasks"></div>
+                    </div>
+                    <div class="kanban-column" data-status="in-progress">
+                        <div class="column-header">
+                            <h3><i class="fas fa-play"></i> Em Progresso</h3>
+                            <span class="task-count" id="in-progress-count">0</span>
+                        </div>
+                        <div class="column-content" id="in-progress-tasks"></div>
+                    </div>
+                    <div class="kanban-column" data-status="done">
+                        <div class="column-header">
+                            <h3><i class="fas fa-check"></i> Concluído</h3>
+                            <span class="task-count" id="done-count">0</span>
+                        </div>
+                        <div class="column-content" id="done-tasks"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calculator Page -->
+            <div id="calculator" class="page">
+                <div class="page-header">
+                    <h1>Calculadora de Porcentagem</h1>
+                    <p>Calcule porcentagens de forma rápida e simples</p>
+                </div>
+
+                <div class="content-grid">
+                    <!-- Calculator -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-calculator"></i> Calculadora</h3>
+                            <p>Digite a porcentagem e o valor para calcular</p>
+                        </div>
+                        <div class="card-content">
+                            <form id="calculator-form">
+                                <div class="form-group">
+                                    <label for="percentage">Porcentagem (%)</label>
+                                    <input type="number" id="percentage" step="0.01" placeholder="Ex: 3" required>
+                                </div>
+                                <div class="form-separator">de</div>
+                                <div class="form-group">
+                                    <label for="value">Valor</label>
+                                    <input type="number" id="value" step="0.01" placeholder="Ex: 569" required>
+                                </div>
+                                <div class="form-buttons">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-percent"></i> Calcular
+                                    </button>
+                                    <button type="button" class="btn btn-outline" onclick="clearCalculation()">
+                                        Limpar
+                                    </button>
+                                </div>
+                            </form>
+                            <div id="calculator-result" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Examples -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Exemplos</h3>
+                            <p>Alguns exemplos de cálculos de porcentagem</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="examples-grid">
+                                <div class="example-item" onclick="useExample(3, 569, 17.07)">
+                                    <div><strong>3%</strong> de <strong>569</strong> = <span class="result">17.07</span></div>
+                                    <button class="btn btn-ghost btn-sm">Usar este exemplo</button>
+                                </div>
+                                <div class="example-item" onclick="useExample(15, 1000, 150)">
+                                    <div><strong>15%</strong> de <strong>1000</strong> = <span class="result">150</span></div>
+                                    <button class="btn btn-ghost btn-sm">Usar este exemplo</button>
+                                </div>
+                                <div class="example-item" onclick="useExample(25, 800, 200)">
+                                    <div><strong>25%</strong> de <strong>800</strong> = <span class="result">200</span></div>
+                                    <button class="btn btn-ghost btn-sm">Usar este exemplo</button>
+                                </div>
+                                <div class="example-item" onclick="useExample(10, 250, 25)">
+                                    <div><strong>10%</strong> de <strong>250</strong> = <span class="result">25</span></div>
+                                    <button class="btn btn-ghost btn-sm">Usar este exemplo</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Task Modal -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Adicionar Nova Tarefa</h3>
+                <button class="close-btn" onclick="closeTaskModal()">&times;</button>
+            </div>
+            <form id="task-form">
+                <div class="form-group">
+                    <label for="task-title">Título da Tarefa</label>
+                    <input type="text" id="task-title" placeholder="Ex: Implementar nova funcionalidade" required>
+                </div>
+                <div class="form-group">
+                    <label for="task-description">Descrição</label>
+                    <textarea id="task-description" placeholder="Descreva a tarefa..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="task-priority">Prioridade</label>
+                    <select id="task-priority" required>
+                        <option value="low">Baixa</option>
+                        <option value="medium" selected>Média</option>
+                        <option value="high">Alta</option>
+                    </select>
+                </div>
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-primary">Criar Tarefa</button>
+                    <button type="button" class="btn btn-outline" onclick="closeTaskModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
